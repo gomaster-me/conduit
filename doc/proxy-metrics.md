@@ -40,12 +40,6 @@ Each of these metrics has the following labels:
 
 * `direction`: `inbound` if the request originated from outside of the pod,
                `outbound` if the request originated from inside of the pod.
-* `deployment`: The deployment that the pod belongs to (if applicable).
-* `job`: The job that the pod belongs to (if applicable).
-* `replica_set`: The replica set that the pod belongs to (if applicable).
-* `daemon_set`: The daemon set that the pod belongs to (if applicable).
-* `replication_controller`: The replication controller that the pod belongs to 
-                            (if applicable).
 * `authority`: The value of the `:authority` (HTTP/2) or `Host` (HTTP/1.1)
                header of the request.
 * `dst_deployment`: The deployment to which this request is being sent.  Only
@@ -66,7 +60,18 @@ Each of these metrics has the following labels:
 * `grpc_status_code`: The value of the `grpc-status` trailer.  Only applicable
                       to response metrics for gRPC responses.
 
-Note that the `instance` and `namespace` labels will typically be added by the
-Prometheus collector.
+Note that the following labels will typically be added by the Prometheus
+collector:
+
+* `instance`: ip:port of the pod.
+* `job`: The Prometheus job responsible for the collection, typically
+         `conduit-proxy`.
+* `namespace`: Kubernetes namespace that the pod belongs to.
+* `k8s_deployment`: The deployment that the pod belongs to (if applicable).
+* `k8s_job`: The job that the pod belongs to (if applicable).
+* `k8s_replica_set`: The replica set that the pod belongs to (if applicable).
+* `k8s_daemon_set`: The daemon set that the pod belongs to (if applicable).
+* `k8s_replication_controller`: The replication controller that the pod belongs
+                                to (if applicable).
 
 [prom-format]: https://prometheus.io/docs/instrumenting/exposition_formats/#format-version-0.0.4
