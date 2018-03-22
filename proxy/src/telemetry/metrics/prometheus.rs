@@ -153,10 +153,12 @@ impl Metrics {
         }
     }
 
-    fn request_total(&mut self, labels: &Arc<RequestLabels>) -> &mut u64 {
-        &mut self.request_total.values
+    fn request_total(&mut self,
+                     labels: &Arc<RequestLabels>)
+                     -> &mut Counter {
+        self.request_total.values
             .entry(labels.clone())
-            .or_insert_with(Default::default).0
+            .or_insert_with(Default::default)
     }
 
     fn response_duration(&mut self,
@@ -177,10 +179,10 @@ impl Metrics {
 
     fn response_total(&mut self,
                       labels: &Arc<ResponseLabels>)
-                      -> &mut Wrapping<u64> {
-        &mut self.response_total.values
+                      -> &mut Counter {
+        self.response_total.values
             .entry(labels.clone())
-            .or_insert_with(Default::default).0
+            .or_insert_with(Default::default)
     }
 }
 
@@ -196,11 +198,23 @@ impl fmt::Display for Metrics {
     }
 }
 
+
 // ===== impl Counter =====
 
 impl fmt::Display for Counter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", (self.0).0 as f64)
+    }
+}
+
+impl Counter {
+
+    /// Increment the counter by one.
+    ///
+    /// This function wraps on overflows.
+    pub fn incr(&mut self) -> &mut Self {
+        self.0 += Wrapping(1);
+        self
     }
 }
 
@@ -315,7 +329,7 @@ impl Aggregate {
             Event::StreamRequestOpen(ref req) => {
                 let labels = Arc::new(RequestLabels::new(req));
                 self.update(|metrics| {
-                    *metrics.request_total(&labels) += Wrapping(1);
+                    *metrics.request_total(&labels).incr();
                 })
             },
 
@@ -335,7 +349,7 @@ impl Aggregate {
                     end.grpc_status,
                 ));
                 self.update(|metrics| {
-                    *metrics.response_total(&labels) += Wrapping(1);
+                    *metrics.response_total(&labels).incr();
                     *metrics.response_duration(&labels) +=  end.since_response_open;
                     *metrics.response_latency(&labels) += end.since_request_open;
                 });
@@ -345,7 +359,7 @@ impl Aggregate {
                 // TODO: do we care about the failure's error code here?
                 let labels = Arc::new(ResponseLabels::new(res, None));
                 self.update(|metrics| {
-                    *metrics.response_total(&labels) += Wrapping(1);
+                    *metrics.response_total(&labels).incr();
                     *metrics.response_duration(&labels) += fail.since_response_open;
                     *metrics.response_latency(&labels) += fail.since_request_open;
                 });
