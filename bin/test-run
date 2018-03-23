@@ -1,0 +1,32 @@
+#!/bin/bash
+
+function check_if_k8s_reachable(){
+    printf "Checking if there is a Kubernetes cluster available..."
+    kubectl --request-timeout=5s get pods --all-namespaces > /dev/null
+    printf "[ok]\\n"
+}
+
+function run_test(){
+    printf "Running test [%s]\\n" "$1"
+    go test -v "$1" -conduit-version "$conduit_version" -conduit-namespace "$conduit_namespace" -integration-tests
+}
+
+test_directory="test"
+conduit_version=$1
+conduit_namespace=${2:-conduit}
+
+if [ -z "$conduit_version" ]; then
+    printf "Conduit version needs to be set as argument to the run script\\n"
+    exit 1
+fi
+
+printf "Testing Conduit version [%s] namespace [%s]\\n" "$conduit_version" "$conduit_namespace"
+
+check_if_k8s_reachable
+
+printf "==================RUNNING ALL TESTS==================\\n"
+
+run_test "$test_directory/install_test.go"
+for test in $(find "$test_directory" -name '*_test.go' -mindepth 2); do
+    run_test "$test"
+done
